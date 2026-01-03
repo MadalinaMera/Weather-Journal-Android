@@ -17,7 +17,7 @@ object Constants {
          * - Use 10.0.2.2 instead of localhost
          * - Ensure your server is running on port 3001
          */
-        const val BASE_URL = "http://10.0.2.2:3000/"
+        const val BASE_URL = "http://192.168.0.103:3001/"
         
         /**
          * OpenWeatherMap API
