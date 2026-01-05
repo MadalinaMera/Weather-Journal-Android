@@ -5,6 +5,8 @@ import androidx.work.WorkManager
 import com.example.weatherapp.data.local.datastore.TokenManager
 import com.example.weatherapp.util.NetworkMonitor
 import com.example.weatherapp.util.NotificationHelper
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -67,5 +69,13 @@ object AppModule {
         @ApplicationContext context: Context
     ): WorkManager {
         return WorkManager.getInstance(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFusedLocationProviderClient(
+        @ApplicationContext context: Context
+    ): FusedLocationProviderClient {
+        return LocationServices.getFusedLocationProviderClient(context)
     }
 }

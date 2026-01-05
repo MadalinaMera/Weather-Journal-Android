@@ -66,26 +66,26 @@ object NetworkModule {
             .build()
     }
 
-    // --- NEW: Public Client for OpenWeatherMap (Images & Data) ---
-    // Forces TLS 1.2 to fix your emulator issue and skips Auth headers
     @Provides
     @Singleton
     @Named("publicClient")
     fun providePublicOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
-        // Force TLS 1.2+ for compatibility with OpenWeatherMap
+
         val spec = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
             .tlsVersions(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
+            .allEnabledCipherSuites()
             .build()
 
         return OkHttpClient.Builder()
             .connectTimeout(Constants.Api.CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(Constants.Api.READ_TIMEOUT, TimeUnit.SECONDS)
-            .connectionSpecs(Collections.singletonList(spec)) // Enforce Modern TLS
+            .connectionSpecs(listOf(spec, ConnectionSpec.CLEARTEXT))
             .addInterceptor(loggingInterceptor)
             .build()
     }
+
 
     @Provides
     @Singleton

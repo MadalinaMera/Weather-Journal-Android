@@ -208,11 +208,8 @@ class SyncWorker @AssistedInject constructor(
             syncedCount += queueResult.first
             failedCount += queueResult.second
             
-            // 2. If force full sync, fetch all entries from server
-            val forceFullSync = inputData.getBoolean(KEY_FORCE_FULL_SYNC, false)
-            if (forceFullSync) {
-                fetchServerEntries()
-            }
+            fetchServerEntries()
+
             
             // 3. Update last sync time
             tokenManager.saveLastSyncTime()

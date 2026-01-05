@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ import java.util.*
 @Composable
 fun JournalScreen(
     onLogout: () -> Unit,
+    onAddEntry: () -> Unit,
     viewModel: JournalViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -75,53 +77,48 @@ fun JournalScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Open add entry dialog */ },
+                onClick = onAddEntry,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Entry")
             }
         }
     ) { paddingValues ->
-        Column(
+
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = { viewModel.refresh() }, // <--- Calls your function!
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Offline banner
-            if (!isOnline) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color(0xFFffa726)
-                ) {
-                    Text(
-                        text = "Offline Mode - Changes will sync later",
-                        modifier = Modifier.padding(8.dp),
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+            // 2. MOVE YOUR EXISTING COLUMN/LAZYCOLUMN HERE
+            // Note: Remove 'padding(paddingValues)' from the Column below
+            // because we moved it to the PullToRefreshBox above.
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Offline banner
+                if (!isOnline) {
+                    // ... existing banner code ...
                 }
-            }
-            
-            when {
-                uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+
+                when {
+                    // Remove the 'isLoading' check here so the list
+                    // remains visible while refreshing
+                    uiState.entries.isEmpty() && !uiState.isLoading -> {
+                        EmptyJournalState()
                     }
-                }
-                uiState.entries.isEmpty() -> {
-                    EmptyJournalState()
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.entries) { entry ->
-                            JournalEntryCard(entry = entry)
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.entries) { entry ->
+                                JournalEntryCard(entry = entry)
+                            }
                         }
                     }
                 }

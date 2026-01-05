@@ -307,3 +307,4 @@ fun NetworkState.getNetworkTypeString(): String {
 fun NetworkState.shouldSync(allowOnMetered: Boolean = true): Boolean {
     return isConnected && (allowOnMetered || !isMetered)
 }
+

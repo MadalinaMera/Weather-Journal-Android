@@ -140,7 +140,16 @@ fun WeatherJournalApp(
                         navController.navigate(Constants.Routes.FORECAST) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onAddEntry = {
+                        navController.navigate(Constants.Routes.ENTRY_CREATE)
                     }
+                )
+            }
+
+            composable(Constants.Routes.ENTRY_CREATE) {
+                com.example.weatherapp.ui.screens.entry.AddEntryScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

@@ -6,6 +6,7 @@ import com.example.weatherapp.data.local.database.JournalDao
 import com.example.weatherapp.data.local.database.entity.JournalEntity
 import com.example.weatherapp.data.local.datastore.TokenManager
 import com.example.weatherapp.util.NetworkMonitor
+import com.example.weatherapp.worker.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +28,8 @@ data class JournalUiState(
 class JournalViewModel @Inject constructor(
     private val journalDao: JournalDao,
     private val tokenManager: TokenManager,
-    private val networkMonitor: NetworkMonitor
+    private val networkMonitor: NetworkMonitor,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(JournalUiState())
@@ -42,6 +44,7 @@ class JournalViewModel @Inject constructor(
     
     init {
         loadEntries()
+        refresh()
     }
     
     private fun loadEntries() {
@@ -59,6 +62,7 @@ class JournalViewModel @Inject constructor(
     
     fun logout() {
         viewModelScope.launch {
+            journalDao.deleteAllEntries()
             tokenManager.clearSession()
             _uiState.update { it.copy(isLoggedOut = true) }
         }
@@ -69,7 +73,7 @@ class JournalViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             // Trigger sync if online
             if (networkMonitor.isCurrentlyConnected()) {
-                // SyncWorker.triggerImmediateSync(context) - need context
+                SyncWorker.triggerImmediateSync(context)
             }
             _uiState.update { it.copy(isLoading = false) }
         }
