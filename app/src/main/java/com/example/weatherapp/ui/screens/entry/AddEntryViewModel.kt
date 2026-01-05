@@ -48,6 +48,15 @@ class AddEntryViewModel @Inject constructor(
         _description.value = newText
     }
 
+    private val _temperature = kotlinx.coroutines.flow.MutableStateFlow("")
+    val temperature = _temperature.asStateFlow()
+
+    fun updateTemperature(newText: String) {
+        _temperature.value = newText
+    }
+
+    private var tempSensorListener: SensorEventListener? = null
+    private var lightSensorListener: SensorEventListener? = null
     fun checkLightSensor() {
         val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
         if (lightSensor == null) {
@@ -56,7 +65,7 @@ class AddEntryViewModel @Inject constructor(
         }
 
         Log.d("SensorDebug", "Sensor registered. Waiting for values...")
-        val listener = object : SensorEventListener {
+        lightSensorListener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
                 val lux = event?.values?.get(0) ?: 0f
                 Log.d("SensorDebug", "Light Value: $lux")
@@ -68,15 +77,42 @@ class AddEntryViewModel @Inject constructor(
                         _description.value = "Dark"
                     }
                 }
-
-                // IMPORTANT: Unregister immediately to save battery and stop updates
-                sensorManager.unregisterListener(this)
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        sensorManager.registerListener(listener, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(lightSensorListener, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    fun checkTemperatureSensor() {
+        val tempSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
+        if (tempSensor == null) {
+            Log.e("SensorDebug", "No Temperature Sensor found!")
+            return
+        }
+
+        tempSensorListener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                val degrees = event?.values?.get(0) ?: 0f
+                Log.d("SensorDebug", "Temperature Value: $degrees")
+
+                // Only auto-fill if the field is empty
+                if (_temperature.value.isBlank()) {
+                    _temperature.value = degrees.toString()
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        sensorManager.registerListener(tempSensorListener, tempSensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        lightSensorListener?.let { sensorManager.unregisterListener(it) }
+        tempSensorListener?.let { sensorManager.unregisterListener(it) }
     }
 
     fun addEntry(
