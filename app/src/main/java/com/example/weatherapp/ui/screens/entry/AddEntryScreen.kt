@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,11 +143,21 @@ fun AddEntryScreen(
             // --- Save Button ---
             Button(
                 onClick = {
-                    val instant = Instant.ofEpochMilli(selectedDateMillis)
-                    val isoDate = DateTimeFormatter.ISO_INSTANT.format(instant)
+                    // 1. Get the Date from the Picker (UTC Midnight)
+                    val pickedInstant = Instant.ofEpochMilli(selectedDateMillis)
+                    val pickedDate = pickedInstant.atZone(ZoneOffset.UTC).toLocalDate()
+
+                    // 2. Get the Current Time
+                    val currentTime = LocalTime.now()
+
+                    // 3. Combine them into a Zoned Date Time
+                    val combinedDateTime = pickedDate.atTime(currentTime).atZone(ZoneId.systemDefault())
+
+                    // 4. Format to ISO String
+                    val isoDate = DateTimeFormatter.ISO_INSTANT.format(combinedDateTime.toInstant())
 
                     viewModel.addEntry(
-                        date = isoDate,
+                        date = isoDate, // <--- Now includes correct time!
                         temperature = temperature.toDoubleOrNull() ?: 0.0,
                         description = description,
                         latitude = location?.latitude ?: 0.0,
@@ -154,7 +166,7 @@ fun AddEntryScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = description.isNotBlank() // Disable if empty
+                enabled = description.isNotBlank()
             ) {
                 Text("Save Entry")
             }

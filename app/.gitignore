@@ -1,1 +1,3 @@
 /build
+/src/main/AndroidManifest.xml
+/src/main/java/com/example/weatherapp/util/Constants.kt

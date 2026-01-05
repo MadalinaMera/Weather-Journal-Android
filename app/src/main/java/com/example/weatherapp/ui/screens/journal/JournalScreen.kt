@@ -25,6 +25,9 @@ import coil.compose.AsyncImage
 import com.example.weatherapp.data.local.database.entity.JournalEntity
 import com.example.weatherapp.ui.theme.JournalPink
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +35,7 @@ import java.util.*
 fun JournalScreen(
     onLogout: () -> Unit,
     onAddEntry: () -> Unit,
+    onEntryClick: (String) -> Unit,
     viewModel: JournalViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -117,7 +121,7 @@ fun JournalScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(uiState.entries) { entry ->
-                                JournalEntryCard(entry = entry)
+                                JournalEntryCard(entry = entry, onClick = { onEntryClick(entry.id)})
                             }
                         }
                     }
@@ -160,8 +164,9 @@ private fun EmptyJournalState() {
 }
 
 @Composable
-private fun JournalEntryCard(entry: JournalEntity) {
+private fun JournalEntryCard(entry: JournalEntity, onClick: ()->Unit) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -245,21 +250,32 @@ private fun JournalEntryCard(entry: JournalEntity) {
 
 private fun formatDate(isoDate: String): String {
     return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        val date = inputFormat.parse(isoDate.substringBefore(".").substringBefore("Z"))
-        outputFormat.format(date!!)
+        // Parse the UTC string (e.g., "2026-01-05T12:00:00Z")
+        val instant = Instant.parse(isoDate)
+
+        // Convert to the Phone's Local Timezone (e.g., Bucharest)
+        val zoneId = ZoneId.systemDefault()
+
+        // Format it nicely
+        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+        instant.atZone(zoneId).format(formatter)
     } catch (e: Exception) {
+        // Fallback if data is malformed
         isoDate.substringBefore("T")
     }
 }
 
 private fun formatTime(isoDate: String): String {
     return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-        val date = inputFormat.parse(isoDate.substringBefore(".").substringBefore("Z"))
-        outputFormat.format(date!!)
+        // Parse the UTC string
+        val instant = Instant.parse(isoDate)
+
+        // Convert to the Phone's Local Timezone
+        val zoneId = ZoneId.systemDefault()
+
+        // Format to hour/minute
+        val formatter = DateTimeFormatter.ofPattern("h:mm a")
+        instant.atZone(zoneId).format(formatter)
     } catch (e: Exception) {
         ""
     }

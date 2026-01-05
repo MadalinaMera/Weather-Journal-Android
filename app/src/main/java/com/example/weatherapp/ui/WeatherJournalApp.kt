@@ -144,7 +144,8 @@ fun WeatherJournalApp(
                     },
                     onAddEntry = {
                         navController.navigate(Constants.Routes.ENTRY_CREATE)
-                    }
+                    },
+                    onEntryClick = {entryId -> navController.navigate(Constants.Routes.ENTRY_EDIT.replace("{entryId}",entryId))}
                 )
             }
 
@@ -189,6 +190,37 @@ fun WeatherJournalApp(
                             }
                         navController.popBackStack()
                     }
+                )
+            }
+
+            composable(Constants.Routes.ENTRY_EDIT) { backStackEntry ->
+                val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
+
+                // Handle Map Return Result (Same as AddEntry)
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val lat = savedStateHandle.get<Double>("lat")
+                val long = savedStateHandle.get<Double>("long")
+
+                val viewModel = hiltViewModel<com.example.weatherapp.ui.screens.entry.EditEntryViewModel>()
+
+                LaunchedEffect(lat, long) {
+                    if (lat != null && long != null) {
+                        viewModel.updateLocation(lat, long)
+                        savedStateHandle.remove<Double>("lat")
+                        savedStateHandle.remove<Double>("long")
+                    }
+                }
+
+                com.example.weatherapp.ui.screens.entry.EditEntryScreen(
+                    entryId = entryId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToMap = { currentLat, currentLong ->
+                        // Save current ID to know where to return? No need, stack handles it.
+                        // Just pass params to map so it opens at the current pin
+                        // (You might need to update LocationPickerScreen arguments to support this)
+                        navController.navigate("map_picker")
+                    },
+                    viewModel = viewModel
                 )
             }
         }
