@@ -92,6 +92,8 @@ dependencies {
 
     //Location
     implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
 
     // Testing
     testImplementation(libs.junit)

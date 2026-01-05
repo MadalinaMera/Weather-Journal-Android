@@ -14,6 +14,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -147,9 +148,47 @@ fun WeatherJournalApp(
                 )
             }
 
-            composable(Constants.Routes.ENTRY_CREATE) {
+            composable(Constants.Routes.ENTRY_CREATE) { backStackEntry ->
+                // Check if we returned from the map with a result
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val lat = savedStateHandle.get<Double>("lat")
+                val long = savedStateHandle.get<Double>("long")
+
+                // Get the ViewModel (scoped to this graph entry)
+                val viewModel = hiltViewModel<com.example.weatherapp.ui.screens.entry.AddEntryViewModel>()
+
+                // If we have a result, update the ViewModel
+                LaunchedEffect(lat, long) {
+                    if (lat != null && long != null) {
+                        viewModel.updateLocation(lat, long)
+                        // Clear result so we don't re-apply it unnecessarily
+                        savedStateHandle.remove<Double>("lat")
+                        savedStateHandle.remove<Double>("long")
+                    }
+                }
+
                 com.example.weatherapp.ui.screens.entry.AddEntryScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToMap = {
+                        navController.navigate("map_picker")
+                    },
+                    viewModel = viewModel
+                )
+            }
+
+            composable("map_picker") {
+                com.example.weatherapp.ui.screens.entry.LocationPickerScreen(
+                    onBack = { navController.popBackStack() },
+                    onLocationSelected = { lat, long ->
+                        // Pass result back to previous screen
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.apply {
+                                set("lat", lat)
+                                set("long", long)
+                            }
+                        navController.popBackStack()
+                    }
                 )
             }
         }

@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,6 +23,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddEntryScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToMap: () -> Unit,
     viewModel: AddEntryViewModel = hiltViewModel()
 ) {
     var description by remember { mutableStateOf("") }
@@ -103,18 +106,35 @@ fun AddEntryScreen(
             )
 
             // --- Location Info ---
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.LocationOn, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                if (isLoadingLocation) {
-                    Text("Fetching location...", style = MaterialTheme.typography.bodyMedium)
-                } else if (location != null) {
-                    Text(
-                        "Loc: ${location!!.latitude.toString().take(7)}, ${location!!.longitude.toString().take(7)}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    Text("Location not available", style = MaterialTheme.typography.bodyMedium)
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                onClick = onNavigateToMap // Click card to open map
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Location",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        if (location != null) {
+                            Text(
+                                text = "${location!!.latitude.toString().take(7)}, ${location!!.longitude.toString().take(7)}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        } else {
+                            Text("Tap to select location", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                    Icon(Icons.Default.Map, contentDescription = "Open Map")
                 }
             }
 

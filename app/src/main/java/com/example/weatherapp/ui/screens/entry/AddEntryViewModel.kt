@@ -69,6 +69,13 @@ class AddEntryViewModel @Inject constructor(
         }
     }
 
+    fun updateLocation(latitude: Double, longitude: Double) {
+        _currentLocation.value = android.location.Location("manual").apply {
+            this.latitude = latitude
+            this.longitude = longitude
+        }
+    }
+
     @SuppressLint("MissingPermission") // Checked in UI
     fun fetchLocation() {
         viewModelScope.launch {
