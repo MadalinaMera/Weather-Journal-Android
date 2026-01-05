@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.example.weatherapp.data.remote.RealtimeManager
 import com.example.weatherapp.ui.WeatherJournalApp
 import com.example.weatherapp.ui.theme.WeatherJournalTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Main entry point for the Weather Journal application.
@@ -18,19 +20,23 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var realtimeManager: RealtimeManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // Connect automatically
+        realtimeManager.connect()
+
         setContent {
-            WeatherJournalTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    // Calls the main composable
-                    WeatherJournalApp()
-                }
-            }
+            WeatherJournalApp()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        realtimeManager.disconnect()
     }
 }
