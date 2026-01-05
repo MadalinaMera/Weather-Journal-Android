@@ -38,6 +38,8 @@ import com.example.weatherapp.ui.theme.PrimaryPurple
 import com.example.weatherapp.ui.theme.SecondaryPurple
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.layout.offset // For moving up/down
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -234,6 +236,20 @@ private fun WeatherContent(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // 1. Create the Infinite Transition
+                    val infiniteTransition = rememberInfiniteTransition(label = "weather_icon_float")
+
+                    // 2. Define the animation (Move Y axis by 10dp up and down)
+                    val offsetY by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = -20f, // Float up
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2000, easing = LinearOutSlowInEasing), // 2 seconds (slower)
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "offset"
+                    )
+
                     // Weather icon and temperature
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -260,7 +276,9 @@ private fun WeatherContent(
                                 )
                                 .build(),
                             contentDescription = weather.description,
-                            modifier = Modifier.size(120.dp),
+                            modifier = Modifier
+                                .size(120.dp)
+                                .offset(y = offsetY.dp),
                             // Add a colored box as a placeholder to see if the space is being reserved
                             placeholder = painterResource(android.R.drawable.ic_menu_camera),
                             error = painterResource(android.R.drawable.ic_delete)

@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.weatherapp.ui.theme.PrimaryPurple
 import com.example.weatherapp.ui.theme.SecondaryPurple
+import androidx.compose.animation.core.* // Import for animation
+import androidx.compose.ui.graphics.graphicsLayer // Import for scaling
 
 @Composable
 fun LoginScreen(
@@ -61,10 +63,27 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // 1. Create the Infinite Transition
+            val infiniteTransition = rememberInfiniteTransition(label = "login_emoji_pulse")
+
+            // 2. Define the animation (Scale from 100% to 120% and back)
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 1.0f,
+                targetValue = 1.2f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = FastOutSlowInEasing), // 1 second pulse
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "scale"
+            )
             // Logo
             Text(
                 text = "🌤️",
-                fontSize = 72.sp
+                fontSize = 72.sp,
+                modifier = Modifier.graphicsLayer{
+                    scaleX = scale
+                    scaleY = scale
+                }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
