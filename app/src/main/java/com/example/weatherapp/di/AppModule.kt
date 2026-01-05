@@ -1,6 +1,7 @@
 package com.example.weatherapp.di
 
 import android.content.Context
+import android.hardware.SensorManager
 import androidx.work.WorkManager
 import com.example.weatherapp.data.local.datastore.TokenManager
 import com.example.weatherapp.util.NetworkMonitor
@@ -77,5 +78,13 @@ object AppModule {
         @ApplicationContext context: Context
     ): FusedLocationProviderClient {
         return LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSensorManager(
+        @ApplicationContext context: Context
+    ): SensorManager {
+        return context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
 }

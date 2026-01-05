@@ -28,7 +28,7 @@ fun AddEntryScreen(
     onNavigateToMap: () -> Unit,
     viewModel: AddEntryViewModel = hiltViewModel()
 ) {
-    var description by remember { mutableStateOf("") }
+    val description by viewModel.description.collectAsState()
     var temperature by remember { mutableStateOf("") }
 
     // Date Picker State
@@ -59,6 +59,7 @@ fun AddEntryScreen(
 
     // Ask for permission immediately when screen opens
     LaunchedEffect(Unit) {
+        viewModel.checkLightSensor()
         locationPermissionLauncher.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
@@ -93,7 +94,7 @@ fun AddEntryScreen(
             // --- Description ---
             OutlinedTextField(
                 value = description,
-                onValueChange = { description = it },
+                onValueChange = { viewModel.updateDescription(it) },
                 label = { Text("How is the weather?") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3

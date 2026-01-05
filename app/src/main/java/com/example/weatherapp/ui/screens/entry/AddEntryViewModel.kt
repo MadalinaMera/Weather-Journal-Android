@@ -1,7 +1,12 @@
 package com.example.weatherapp.ui.screens.entry
 
 import android.annotation.SuppressLint
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.local.database.JournalDao
@@ -26,6 +31,7 @@ class AddEntryViewModel @Inject constructor(
     private val journalDao: JournalDao,
     private val gson: Gson,
     private val locationClient: FusedLocationProviderClient,
+    private val sensorManager: SensorManager,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -34,6 +40,44 @@ class AddEntryViewModel @Inject constructor(
 
     private val _isLoadingLocation = MutableStateFlow(false)
     val isLoadingLocation = _isLoadingLocation.asStateFlow()
+
+    private val _description = kotlinx.coroutines.flow.MutableStateFlow("")
+    val description = _description.asStateFlow()
+
+    fun updateDescription(newText: String) {
+        _description.value = newText
+    }
+
+    fun checkLightSensor() {
+        val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        if (lightSensor == null) {
+            Log.e("SensorDebug", "No Light Sensor found on this device!")
+            return
+        }
+
+        Log.d("SensorDebug", "Sensor registered. Waiting for values...")
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                val lux = event?.values?.get(0) ?: 0f
+                Log.d("SensorDebug", "Light Value: $lux")
+                // If the user hasn't typed anything yet, auto-fill
+                if (_description.value.isBlank()) {
+                    if (lux > 10000) {
+                        _description.value = "Sunny"
+                    } else {
+                        _description.value = "Dark"
+                    }
+                }
+
+                // IMPORTANT: Unregister immediately to save battery and stop updates
+                sensorManager.unregisterListener(this)
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        sensorManager.registerListener(listener, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
 
     fun addEntry(
         date: String,
