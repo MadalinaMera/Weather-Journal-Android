@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter
 fun EditEntryScreen(
     entryId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToMap: (Double, Double) -> Unit, // Pass current loc to map
+    onNavigateToMap: (Double, Double) -> Unit,
     viewModel: EditEntryViewModel = hiltViewModel()
 ) {
     val entryState by viewModel.entryState.collectAsState()
@@ -31,44 +31,6 @@ fun EditEntryScreen(
     // Load data when screen opens
     LaunchedEffect(entryId) {
         viewModel.loadEntry(entryId)
-    }
-
-    // Mutable state for the form fields
-    var description by remember { mutableStateOf("") }
-    var temperature by remember { mutableStateOf("") }
-    var dateString by remember { mutableStateOf("") }
-
-    // Date Picker state
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    // When data loads from DB, fill the form
-    LaunchedEffect(entryState) {
-        entryState?.let {
-            description = it.description
-            temperature = it.temperature
-            dateString = it.date
-            // Set date picker to saved date
-            try {
-                val instant = Instant.parse(it.date) // Expects ISO format like 2023-01-01T12:00:00Z
-                datePickerState.selectedDateMillis = instant.toEpochMilli()
-            } catch (e: Exception) { /* ignore parse error */ }
-        }
-    }
-
-    // Formatter for display
-    val displayDate = remember(datePickerState.selectedDateMillis, dateString) {
-        val millis = datePickerState.selectedDateMillis
-        if (millis != null) {
-            val instant = Instant.ofEpochMilli(millis)
-            DateTimeFormatter.ISO_LOCAL_DATE.format(instant.atZone(ZoneId.systemDefault()))
-        } else {
-            // Fallback to parsing the string string if picker is empty
-            try {
-                val instant = Instant.parse(dateString)
-                DateTimeFormatter.ISO_LOCAL_DATE.format(instant.atZone(ZoneId.systemDefault()))
-            } catch (e: Exception) { dateString }
-        }
     }
 
     Scaffold(
@@ -79,28 +41,64 @@ fun EditEntryScreen(
                 CircularProgressIndicator()
             }
         } else {
+            // We force a non-null variable here for cleaner usage below
+            val entry = entryState!!
+
+            // 1. Calculate Initial Date in Millis (for the Picker)
+            val initialDateMillis = remember(entry.date) {
+                try {
+                    Instant.parse(entry.date).toEpochMilli()
+                } catch (e: Exception) {
+                    System.currentTimeMillis()
+                }
+            }
+
+            // 2. Initialize Picker State
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = initialDateMillis
+            )
+
+            var showDatePicker by remember { mutableStateOf(false) }
+
+            // 3. Mutable state for text fields
+            // We use 'remember' with keys so they reset if the entry changes
+            var description by remember(entry) { mutableStateOf(entry.description) }
+            var temperature by remember(entry) { mutableStateOf(entry.temperature) }
+
+            // 4. Create Display String (updates when you pick a NEW date)
+            val displayDate = remember(datePickerState.selectedDateMillis) {
+                val millis = datePickerState.selectedDateMillis ?: initialDateMillis
+                val instant = Instant.ofEpochMilli(millis)
+                val zoneId = ZoneId.systemDefault()
+                DateTimeFormatter.ofPattern("MMM dd, yyyy").format(instant.atZone(zoneId))
+            }
+
             Column(
-                modifier = Modifier.padding(padding).padding(16.dp),
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // --- Date ---
+                // --- Date Field ---
                 OutlinedTextField(
                     value = displayDate,
                     onValueChange = { },
                     label = { Text("Date") },
                     readOnly = true,
-                    trailingIcon = { Icon(Icons.Default.CalendarToday, null) },
-                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = "Edit Date")
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
                 )
 
                 // --- Description ---
                 OutlinedTextField(
                     value = description,
-                    onValueChange = {
-                        description = it
-                        // Update VM state immediately so it persists on rotation
-                        // (Simplified: In a real app, update via event)
-                    },
+                    onValueChange = { description = it },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
@@ -118,8 +116,7 @@ fun EditEntryScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     onClick = {
-                        // Open map with current coordinates
-                        onNavigateToMap(entryState!!.latitude, entryState!!.longitude)
+                        onNavigateToMap(entry.latitude, entry.longitude)
                     }
                 ) {
                     Row(
@@ -131,7 +128,7 @@ fun EditEntryScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Location", style = MaterialTheme.typography.labelMedium)
                             Text(
-                                "${entryState!!.latitude.toString().take(7)}, ${entryState!!.longitude.toString().take(7)}",
+                                "${entry.latitude.toString().take(7)}, ${entry.longitude.toString().take(7)}",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -142,34 +139,18 @@ fun EditEntryScreen(
                 // --- Update Button ---
                 Button(
                     onClick = {
-                        val finalDate = if (datePickerState.selectedDateMillis != null) {
-                            // A. User picked a NEW date.
-                            // We must preserve the OLD time.
+                        // 1. Calculate the new Date String
+                        // (Logic: User's picked date + Current time + Local Timezone)
+                        val pickedMillis = datePickerState.selectedDateMillis ?: initialDateMillis
+                        val pickedInstant = Instant.ofEpochMilli(pickedMillis)
+                        val pickedDate = pickedInstant.atZone(ZoneOffset.UTC).toLocalDate()
+                        val currentTime = LocalTime.now()
+                        val combinedDateTime = pickedDate.atTime(currentTime).atZone(ZoneId.systemDefault())
+                        val isoDate = DateTimeFormatter.ISO_INSTANT.format(combinedDateTime.toInstant())
 
-                            // 1. Get new date from picker
-                            val pickedInstant = Instant.ofEpochMilli(datePickerState.selectedDateMillis!!)
-                            val newDate = pickedInstant.atZone(ZoneOffset.UTC).toLocalDate()
-
-                            // 2. Extract time from the ORIGINAL date string
-                            val originalTime = try {
-                                Instant.parse(dateString)
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalTime()
-                            } catch (e: Exception) {
-                                LocalTime.now() // Fallback if parsing fails
-                            }
-
-                            // 3. Combine New Date + Old Time
-                            val combined = newDate.atTime(originalTime).atZone(ZoneId.systemDefault())
-                            DateTimeFormatter.ISO_INSTANT.format(combined.toInstant())
-
-                        } else {
-                            // B. User kept the OLD date. Use it as is.
-                            dateString
-                        }
-
+                        // 2. Call the ViewModel with the CORRECT signature
                         viewModel.updateEntry(
-                            newDate = finalDate,
+                            newDate = isoDate,
                             newTemperature = temperature.toDoubleOrNull() ?: 0.0,
                             newDescription = description,
                             onSuccess = onNavigateBack
@@ -180,13 +161,17 @@ fun EditEntryScreen(
                     Text("Update Entry")
                 }
             }
-        }
 
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = { TextButton(onClick = { showDatePicker = false }) { Text("OK") } }
-            ) { DatePicker(state = datePickerState) }
+            // --- Date Picker Dialog ---
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = { TextButton(onClick = { showDatePicker = false }) { Text("OK") } },
+                    dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+                ) {
+                    DatePicker(state = datePickerState)
+                }
+            }
         }
     }
 }

@@ -35,11 +35,16 @@ fun AddEntryScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // Formatted date string for display
-    val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-    val formattedDate = remember(selectedDateMillis) {
-        val instant = Instant.ofEpochMilli(selectedDateMillis)
-        DateTimeFormatter.ISO_LOCAL_DATE.format(instant.atZone(ZoneId.systemDefault()))
+    val displayDate = remember(datePickerState.selectedDateMillis) {
+        val millis = datePickerState.selectedDateMillis
+        if (millis != null) {
+            val instant = java.time.Instant.ofEpochMilli(millis)
+            val zoneId = ZoneId.systemDefault()
+            DateTimeFormatter.ofPattern("MMM dd, yyyy").format(instant.atZone(zoneId))
+        } else {
+            // Default to Today if nothing picked yet
+            DateTimeFormatter.ofPattern("MMM dd, yyyy").format(java.time.LocalDate.now())
+        }
     }
 
     // Location State
@@ -79,12 +84,14 @@ fun AddEntryScreen(
         ) {
             // --- Date Selection ---
             OutlinedTextField(
-                value = formattedDate,
+                value = displayDate,
                 onValueChange = { },
                 label = { Text("Date") },
                 readOnly = true, // Prevent typing, force picking
                 trailingIcon = {
-                    Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Select Date")
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,7 +152,8 @@ fun AddEntryScreen(
             Button(
                 onClick = {
                     // 1. Get the Date from the Picker (UTC Midnight)
-                    val pickedInstant = Instant.ofEpochMilli(selectedDateMillis)
+                    val pickedMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+                    val pickedInstant = Instant.ofEpochMilli(pickedMillis)
                     val pickedDate = pickedInstant.atZone(ZoneOffset.UTC).toLocalDate()
 
                     // 2. Get the Current Time
