@@ -1,5 +1,7 @@
 package com.example.weatherapp.util
 
+import androidx.viewbinding.BuildConfig
+
 /**
  * Application-wide constants.
  */
@@ -13,8 +15,8 @@ object Constants {
          * Base URL for the Weather Journal backend API.
          * Change this to your server URL in production.
          * 
-         * For emulator testing:
-         * - Use 10.0.2.2 instead of localhost
+         * For emulator testing - Use 10.0.2.2
+         * For external device - Use 192.168.0.103
          * - Ensure your server is running on port 3001
          */
         const val BASE_URL = "http://192.168.0.103:3001/"
@@ -30,7 +32,7 @@ object Constants {
          * 
          * TODO: Move to BuildConfig or secrets management in production
          */
-        const val OPENWEATHER_API_KEY = "6b7cc26643fcd8bab44289dbd26c777e" // Add your API key here
+        const val OPENWEATHER_API_KEY = com.example.weatherapp.BuildConfig.OPENWEATHER_API_KEY// Add your API key here
         
         /**
          * Network timeouts in seconds.
@@ -126,5 +128,10 @@ object Constants {
         const val LOCATION_PERMISSION = 1001
         const val CAMERA_PERMISSION = 1002
         const val NOTIFICATION_PERMISSION = 1003
+    }
+
+    object Location{
+        const val DEFAULT_LAT = 44.432
+        const val DEFAULT_LONG = 26.106
     }
 }
