@@ -24,23 +24,38 @@ class RealtimeManager @Inject constructor(
 ) {
     private var socket: Socket? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var activeToken: String? = null
 
     fun connect() {
-        if (socket?.connected() == true) return
-
+        android.util.Log.d("RealtimeManager", "connect() called")
         scope.launch {
-            val token = tokenManager.getToken() ?: return@launch
-
+            val newToken = tokenManager.getToken() ?: return@launch
+            android.util.Log.d("RealtimeManager", "Token found: $newToken")
+            if (socket?.connected() == true) {
+                if (activeToken == newToken) {
+                    android.util.Log.d("RealtimeManager", "Already connected as this user. Skipping.")
+                    return@launch // Already connected with correct user
+                } else {
+                    // Connected as wrong user! Disconnect first.
+                    android.util.Log.d("RealtimeManager", "Connected as wrong user. Disconnecting...")
+                    disconnect()
+                }
+            }
             try {
+                android.util.Log.d("RealtimeManager", "Attempting socket connection...")
                 // 1. Configure Options with Auth Token
                 val options = IO.Options().apply {
-                    auth = mapOf("token" to token)
+                    auth = mapOf("token" to newToken)
                 }
 
                 // 2. Initialize Socket (Use 10.0.2.2 for Emulator, or your local IP for device)
                 // Note: Constants.BASE_URL usually ends with /, remove it for socket root
                 val url = Constants.Api.BASE_URL.removeSuffix("/")
                 socket = IO.socket(url, options)
+
+                socket?.on(Socket.EVENT_CONNECT) {
+                    android.util.Log.d("RealtimeManager", "⚡ Socket Connected!")
+                }
 
                 // 3. Listen for "New Entry"
                 socket?.on("entry_added") { args ->
@@ -67,6 +82,8 @@ class RealtimeManager @Inject constructor(
     fun disconnect() {
         socket?.disconnect()
         socket?.off() // Remove listeners
+        socket = null
+        activeToken = null
     }
 
     private fun handleEntryUpdate(data: Any, isNew: Boolean) {

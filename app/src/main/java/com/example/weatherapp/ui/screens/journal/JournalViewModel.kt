@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.local.database.JournalDao
 import com.example.weatherapp.data.local.database.entity.JournalEntity
 import com.example.weatherapp.data.local.datastore.TokenManager
+import com.example.weatherapp.data.remote.RealtimeManager
 import com.example.weatherapp.util.NetworkMonitor
 import com.example.weatherapp.worker.SyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +29,7 @@ data class JournalUiState(
 class JournalViewModel @Inject constructor(
     private val journalDao: JournalDao,
     private val tokenManager: TokenManager,
+    private val realtimeManager: RealtimeManager,
     private val networkMonitor: NetworkMonitor,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
@@ -45,6 +47,7 @@ class JournalViewModel @Inject constructor(
     init {
         loadEntries()
         refresh()
+        realtimeManager.connect()
     }
     
     private fun loadEntries() {
@@ -62,6 +65,7 @@ class JournalViewModel @Inject constructor(
     
     fun logout() {
         viewModelScope.launch {
+            realtimeManager.disconnect()
             journalDao.deleteAllEntries()
             tokenManager.clearSession()
             _uiState.update { it.copy(isLoggedOut = true) }
