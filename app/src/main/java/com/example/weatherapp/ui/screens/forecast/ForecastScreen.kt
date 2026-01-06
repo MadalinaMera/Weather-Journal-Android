@@ -41,6 +41,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.offset // For moving up/down
 import androidx.compose.ui.graphics.ColorFilter
 import com.example.weatherapp.util.WeatherIconMapper
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +50,17 @@ fun ForecastScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { errorMessage ->
+            scope.launch {
+                snackbarHostState.showSnackbar(errorMessage)
+            }
+        }
+    }
 
     // Setup Location Client
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -94,6 +106,7 @@ fun ForecastScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Current Forecast") },
@@ -122,55 +135,22 @@ fun ForecastScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            when {
-                uiState.isLoading -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(color = PrimaryPurple)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Fetching weather data...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            if (uiState.weather != null) {
+                WeatherContent(
+                    uiState = uiState,
+                    onLocationClick = { viewModel.refresh() }
+                )
+            }
+            // Only show the "Empty Error Box" if we truly have NO data and NO weather
+            else if (uiState.error != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = uiState.error!!, color = Color.Red)
                 }
-                uiState.error != null -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = uiState.error ?: "Failed to load weather data",
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.refresh() }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-                uiState.weather != null -> {
-                    WeatherContent(
-                        uiState = uiState,
-                        onLocationClick = {
-                            checkAndRequestLocation(context, permissionLauncher) { getLocation() }
-                        }
-                    )
-                }
-                else -> {
-                    MockWeatherContent(
-                        onLocationClick = {
-                            checkAndRequestLocation(context, permissionLauncher) { getLocation() }
-                        }
-                    )
-                }
+            }
+
+            // Loading Indicator (Overlay)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
     }
