@@ -357,4 +357,12 @@ interface JournalDao {
         val entriesToInsert = serverEntries.filter { it.id !in unsyncedIds }
         insertEntries(entriesToInsert)
     }
+
+   // ============== Forecast =================
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveWeather(weather: com.example.weatherapp.data.local.database.entity.WeatherEntity)
+
+    @Query("SELECT * FROM current_weather WHERE id = 0")
+    suspend fun getLastWeather(): com.example.weatherapp.data.local.database.entity.WeatherEntity?
 }

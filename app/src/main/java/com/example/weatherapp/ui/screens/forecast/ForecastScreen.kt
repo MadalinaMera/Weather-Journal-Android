@@ -32,14 +32,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.weatherapp.ui.theme.PrimaryPurple
 import com.example.weatherapp.ui.theme.SecondaryPurple
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.offset // For moving up/down
+import androidx.compose.ui.graphics.ColorFilter
+import com.example.weatherapp.util.WeatherIconMapper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -256,32 +257,16 @@ private fun WeatherContent(
                         horizontalArrangement = Arrangement.Center, // UPDATED: Changed from SpaceEvenly to Center
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val imageUrl = "https://openweathermap.org/img/wn/${weather.icon}@4x.png"
+                        val iconResId = WeatherIconMapper.getIconResource(weather.icon)
 
-                        // Log the URL to make sure it's correct
-                        SideEffect {
-                            Log.d("ImageDebug", "Loading Image URL: $imageUrl")
-                        }
-
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(imageUrl)
-                                .listener(
-                                    onStart = { Log.d("ImageDebug", "Image loading started") },
-                                    onSuccess = { _, _ -> Log.d("ImageDebug", "Image loaded successfully") },
-                                    onError = { _, result ->
-                                        Log.e("ImageDebug", "Image loading failed: ${result.throwable.message}")
-                                        result.throwable.printStackTrace()
-                                    }
-                                )
-                                .build(),
+                        // 2. Load the local image instantly
+                        Image(
+                            painter = painterResource(id = iconResId),
                             contentDescription = weather.description,
+                            colorFilter = ColorFilter.tint(Color.White),
                             modifier = Modifier
-                                .size(120.dp)
-                                .offset(y = offsetY.dp),
-                            // Add a colored box as a placeholder to see if the space is being reserved
-                            placeholder = painterResource(android.R.drawable.ic_menu_camera),
-                            error = painterResource(android.R.drawable.ic_delete)
+                                .size(80.dp)
+                                .offset(y = offsetY.dp) // Keep your existing animation!
                         )
 
                         // UPDATED: Added spacer so they don't touch

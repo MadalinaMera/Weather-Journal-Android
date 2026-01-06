@@ -10,6 +10,7 @@ import com.example.weatherapp.data.local.database.entity.JournalEntity
 import com.example.weatherapp.data.local.database.entity.SyncQueueEntity
 import com.example.weatherapp.data.local.database.entity.SyncOperationType
 import com.example.weatherapp.data.local.database.entity.SyncStatus
+import com.example.weatherapp.data.local.database.entity.WeatherEntity
 
 /**
  * Type converters for Room to handle enum types.
@@ -54,9 +55,10 @@ class Converters {
 @Database(
     entities = [
         JournalEntity::class,
-        SyncQueueEntity::class
+        SyncQueueEntity::class,
+        WeatherEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
