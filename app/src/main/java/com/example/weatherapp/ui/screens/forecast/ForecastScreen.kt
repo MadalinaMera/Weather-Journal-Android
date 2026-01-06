@@ -105,6 +105,21 @@ fun ForecastScreen(
         }
     }
 
+    val onUseDeviceLocation = {
+        // Check permissions directly
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission already granted -> Get GPS Location
+            getLocation()
+        } else {
+            // Permission needed -> Ask for it
+            permissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
@@ -138,7 +153,7 @@ fun ForecastScreen(
             if (uiState.weather != null) {
                 WeatherContent(
                     uiState = uiState,
-                    onLocationClick = { viewModel.refresh() }
+                    onLocationClick = onUseDeviceLocation
                 )
             }
             // Only show the "Empty Error Box" if we truly have NO data and NO weather
