@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.weatherapp.util.Constants
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -38,7 +39,7 @@ fun LocationPickerScreen(
     // 1. Setup Camera State
     // Default to a fallback location (e.g., Romania) if GPS fails,
     // but we will update this immediately if we find the user.
-    val defaultLocation = LatLng(46.07, 23.5)
+    val defaultLocation = LatLng(Constants.Location.DEFAULT_LAT, Constants.Location.DEFAULT_LONG)
     val startPos = if (initialLat != 0.0) LatLng(initialLat, initialLong) else defaultLocation
 
     val cameraPositionState = rememberCameraPositionState {

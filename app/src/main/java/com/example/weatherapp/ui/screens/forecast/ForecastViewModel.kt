@@ -1,6 +1,7 @@
 package com.example.weatherapp.ui.screens.forecast
 
 import android.util.Log
+import androidx.compose.ui.unit.Constraints
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.local.database.JournalDao
@@ -49,7 +50,7 @@ class ForecastViewModel @Inject constructor(
         loadCachedWeather()
 
         // Then try to fetch fresh data
-        loadWeatherByLocation(44.432, 26.106)
+        loadWeatherByLocation(Constants.Location.DEFAULT_LAT, Constants.Location.DEFAULT_LONG)
     }
 
     // New helper to load from DB
