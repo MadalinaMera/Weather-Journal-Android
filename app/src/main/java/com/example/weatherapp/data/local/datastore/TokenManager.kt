@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.text.get
 
 /**
  * Extension property to create DataStore instance.

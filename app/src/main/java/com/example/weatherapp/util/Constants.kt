@@ -1,6 +1,5 @@
 package com.example.weatherapp.util
 
-import androidx.viewbinding.BuildConfig
 
 /**
  * Application-wide constants.

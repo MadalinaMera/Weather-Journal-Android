@@ -1,7 +1,6 @@
 package com.example.weatherapp.ui.screens.forecast
 
 import android.util.Log
-import androidx.compose.ui.unit.Constraints
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.local.database.JournalDao

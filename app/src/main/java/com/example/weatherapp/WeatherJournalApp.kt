@@ -6,7 +6,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import com.example.weatherapp.worker.SyncWorker // Fixed import
+import com.example.weatherapp.worker.SyncWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import javax.inject.Named
